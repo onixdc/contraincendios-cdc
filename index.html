@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Historia Contra Incendio</title>
+  
+  <!-- Estas etiquetas importan React directamente al navegador -->
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  <!-- Babel nos permite compilar el código JSX al instante -->
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <!-- Tailwind CSS para el diseño -->
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body>
+  <!-- Contenedor principal donde React inyectará la aplicación -->
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect } = React;
+
+    // --- Componentes de Iconos ---
+    const PlusIcon = () => (
+      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+    );
+
+    const ImageIcon = () => (
+      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+    );
+
+    const CloseIcon = () => (
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+    );
+
+    const TrashIcon = () => (
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+    );
+
+    const LockIcon = () => (
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+    );
+
+    const UnlockIcon = () => (
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg>
+    );
+
+    const UsersIcon = () => (
+      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+    );
+
+    // --- Datos de prueba ---
+    const initialStudents = [
+      { id: '1', name: 'Alejandro Gómez', quote: 'El éxito es la suma de pequeños esfuerzos diarios.', imageUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=400&q=80', isDeceased: false },
+      { id: '2', name: 'Sofía Martínez', quote: 'Nunca dejes de aprender y explorar el mundo.', imageUrl: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=400&q=80', isDeceased: false },
+      { id: '3', name: 'Diego Rodríguez', quote: 'La creatividad es la inteligencia divirtiéndose.', imageUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&q=80', isDeceased: false },
+      { id: '4', name: 'Valentina López', quote: 'El futuro pertenece a quienes creen en la belleza de sus sueños.', imageUrl: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&w=400&q=80', isDeceased: false }
+    ];
+
+    function App() {
+      // Estados de los datos principales
+      const [students, setStudents] = useState([]);
+      const [background, setBackground] = useState('linear-gradient(to bottom right, #111827, #000000)');
+      
+      // Estados de seguridad y administradores
+      const [isAdmin, setIsAdmin] = useState(false);
+      const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+      const [adminUsername, setAdminUsername] = useState('');
+      const [adminPassword, setAdminPassword] = useState('');
+      const [loginError, setLoginError] = useState(false);
+      const [adminUsers, setAdminUsers] = useState([{ id: '1', username: 'admin', password: 'admin123' }]);
+
+      // Estados para abrir ventanas (Modales)
+      const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+      const [isBgModalOpen, setIsBgModalOpen] = useState(false);
+      const [isUsersModalOpen, setIsUsersModalOpen] = useState(false);
+      
+      // Estados para formularios de registro
+      const [newStudent, setNewStudent] = useState({ name: '', quote: '', imageUrl: '', isDeceased: false });
+      const [newBgInput, setNewBgInput] = useState('');
+      const [newUser, setNewUser] = useState({ username: '', password: '' });
+      const [adminError, setAdminError] = useState('');
+
+      // Cargar datos al entrar a la página
+      useEffect(() => {
+        const savedStudents = localStorage.getItem('anuario_students');
+        const savedBg = localStorage.getItem('anuario_background');
+        const savedAdmins = localStorage.getItem('anuario_admin_users');
+        
+        if (savedStudents) setStudents(JSON.parse(savedStudents));
+        else setStudents(initialStudents);
+
+        if (savedBg) setBackground(savedBg);
+        if (savedAdmins) setAdminUsers(JSON.parse(savedAdmins));
+      }, []);
+
+      // Autoguardar cuando haya cambios
+      useEffect(() => {
+        if (students.length > 0) localStorage.setItem('anuario_students', JSON.stringify(students));
+      }, [students]);
+
+      useEffect(() => {
+        localStorage.setItem('anuario_background', background);
+      }, [background]);
+
+      useEffect(() => {
+        localStorage.setItem('anuario_admin_users', JSON.stringify(adminUsers));
+      }, [adminUsers]);
+
+      // Función para procesar imágenes locales y convertirlas a código Base64
+      const handleFileUpload = (e, callback) => {
+        const file = e.target.files[0];
+        if (file) {
+          const reader = new FileReader();
+          reader.onloadend = () => callback(reader.result);
+          reader.readAsDataURL(file);
+        }
+      };
+
+      const handleAddStudent = (e) => {
+        e.preventDefault();
+        if (!newStudent.name || !newStudent.imageUrl) return;
+        const studentToAdd = { ...newStudent, id: Date.now().toString() };
+        setStudents([...students, studentToAdd]);
+        setNewStudent({ name: '', quote: '', imageUrl: '', isDeceased: false });
+        setIsAddModalOpen(false);
+      };
+
+      const handleDeleteStudent = (id) => {
+        setStudents(students.filter(student => student.id !== id));
+      };
+
+      const handleLogin = (e) => {
+        e.preventDefault();
+        const validUser = adminUsers.find(u => u.username === adminUsername && u.password === adminPassword);
+        if (validUser) { 
+          setIsAdmin(true); setIsLoginModalOpen(false); setAdminUsername(''); setAdminPassword(''); setLoginError(false);
+        } else {
+          setLoginError(true); setAdminPassword('');
+        }
+      };
+
+      const handleAddAdmin = (e) => {
+        e.preventDefault();
+        if (adminUsers.some(u => u.username === newUser.username)) { setAdminError('Ese nombre de usuario ya existe.'); return; }
+        if (newUser.username && newUser.password) {
+          setAdminUsers([...adminUsers, { id: Date.now().toString(), username: newUser.username, password: newUser.password }]);
+          setNewUser({ username: '', password: '' });
+          setAdminError('');
+        }
+      };
+
+      const handleDeleteAdmin = (id) => {
+        if (adminUsers.length <= 1) { setAdminError('Debe haber al menos un administrador en el sistema.'); return; }
+        setAdminUsers(adminUsers.filter(u => u.id !== id));
+        setAdminError('');
+      };
+
+      const handleChangeBackground = (e) => {
+        e.preventDefault();
+        if (!newBgInput) return;
+        let finalBg = newBgInput;
+        // Permite URLs largas y locales sin romperse
+        if (newBgInput.startsWith('http') || newBgInput.startsWith('data:image')) {
+          finalBg = `url("${newBgInput}")`; 
+        }
+        setBackground(finalBg);
+        setNewBgInput('');
+        setIsBgModalOpen(false);
+      };
+
+      return (
+        <div className="dynamic-bg min-h-screen text-white font-sans transition-all duration-500" style={{ '--dynamic-bg-value': background }}>
+          <style>
+            {`
+              .dynamic-bg { background: var(--dynamic-bg-value); background-size: cover; background-position: center; background-attachment: fixed; background-repeat: no-repeat; }
+              @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap');
+              .font-serif-elegant { font-family: 'Playfair Display', serif; }
+              .shine-frame { position: relative; overflow: hidden; border-radius: 12px; transition: all 0.3s ease; box-shadow: inset 0 0 0 2px rgba(212, 175, 55, 0.8), 0 0 0 3px #8a6e2f, 0 0 0 6px #d4af37, 0 0 0 7px #f1e5ac, 0 0 0 9px #8a6e2f, 0 15px 35px -10px rgba(0, 0, 0, 0.6); }
+              .shine-frame::after { content: ''; position: absolute; top: 0; left: -150%; width: 50%; height: 100%; background: linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(255,255,255,0.4) 50%, rgba(255,255,255,0) 100%); transform: skewX(-25deg); transition: left 0.7s ease; z-index: 10; pointer-events: none; }
+              .group:hover .shine-frame::after { left: 200%; }
+              .group:hover .shine-frame { transform: translateY(-5px); box-shadow: inset 0 0 0 2px rgba(212, 175, 55, 1), 0 0 0 3px #8a6e2f, 0 0 0 6px #eac76c, 0 0 0 7px #fff2c2, 0 0 0 9px #8a6e2f, 0 20px 40px -10px rgba(0, 0, 0, 0.7); }
+              .bg-overlay { background-color: rgba(0, 0, 0, 0.6); backdrop-filter: blur(2px); }
+            `}
+          </style>
+
+          <div className="bg-overlay min-h-screen pb-20">
+            {/* Header del sitio */}
+            <header className="py-12 px-6 text-center relative">
+              <div className="absolute top-6 right-6">
+                {isAdmin ? (
+                  <button onClick={() => setIsAdmin(false)} className="text-gray-400 hover:text-white transition-colors flex flex-col items-center gap-1" title="Cerrar sesión"><UnlockIcon /><span className="text-xs">Salir Admin</span></button>
+                ) : (
+                  <button onClick={() => setIsLoginModalOpen(true)} className="text-gray-400 hover:text-white transition-colors flex flex-col items-center gap-1" title="Acceso Admin"><LockIcon /><span className="text-xs">Admin</span></button>
+                )}
+              </div>
+              
+              <h1 className="font-serif-elegant text-5xl md:text-7xl font-bold tracking-wide mb-4 text-transparent bg-clip-text bg-gradient-to-r from-yellow-200 via-yellow-400 to-yellow-600 drop-shadow-lg">Generación 2026</h1>
+              <p className="text-gray-300 max-w-2xl mx-auto text-lg italic font-serif-elegant mb-8">"Recordando el pasado, viviendo el presente y construyendo el futuro."</p>
+              
+              {/* Botones de administrador */}
+              {isAdmin && (
+                <div className="flex flex-wrap justify-center gap-4">
+                  <button onClick={() => setIsAddModalOpen(true)} className="flex items-center gap-2 bg-gradient-to-r from-yellow-600 to-yellow-500 hover:from-yellow-500 hover:to-yellow-400 text-black font-semibold py-2 px-6 rounded-full shadow-lg transition-all transform hover:scale-105"><PlusIcon /> Agregar Alumno</button>
+                  <button onClick={() => setIsBgModalOpen(true)} className="flex items-center gap-2 bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/20 text-white font-semibold py-2 px-6 rounded-full shadow-lg transition-all transform hover:scale-105"><ImageIcon /> Cambiar Fondo</button>
+                  <button onClick={() => { setIsUsersModalOpen(true); setAdminError(''); }} className="flex items-center gap-2 bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/20 text-white font-semibold py-2 px-6 rounded-full shadow-lg transition-all transform hover:scale-105"><UsersIcon /> Gestionar Admins</button>
+                </div>
+              )}
+            </header>
+
+            {/* Cuadrícula de fotos */}
+            <main className="container mx-auto px-6 max-w-7xl">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-10">
+                {students.map((student) => (
+                  <div key={student.id} className="group flex flex-col items-center">
+                    <div className="shine-frame w-64 h-80 relative bg-gray-900 cursor-pointer">
+                      {student.isDeceased && (
+                        <div className="absolute top-0 right-0 w-20 h-20 overflow-hidden z-30 pointer-events-none">
+                          <div className="absolute top-4 -right-8 w-32 bg-black text-gray-300 text-[10px] font-serif-elegant font-bold py-1 text-center transform rotate-45 shadow-[0_2px_4px_rgba(0,0,0,0.5)] border-y border-gray-600">En memoria</div>
+                        </div>
+                      )}
+                      <img src={student.imageUrl} alt={student.name} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" onError={(e) => { e.target.src = 'https://via.placeholder.com/400x500/1a1a1a/d4af37?text=Foto+No+Disponible'; }} />
+                      {isAdmin && (
+                        <button onClick={() => handleDeleteStudent(student.id)} className="absolute top-2 right-2 p-2 bg-red-600/80 hover:bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity z-20" title="Eliminar alumno"><TrashIcon /></button>
+                      )}
+                      <div className="absolute bottom-0 w-full p-4 bg-gradient-to-t from-black/90 via-black/50 to-transparent z-20">
+                        <h3 className="font-serif-elegant text-xl font-bold text-yellow-400 text-center drop-shadow-md">{student.name}</h3>
+                      </div>
+                    </div>
+                    <div className="mt-4 text-center px-2 max-w-[256px]">
+                      {student.quote && <p className="text-gray-300 text-sm italic font-serif-elegant">"{student.quote}"</p>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+              {students.length === 0 && (
+                <div className="text-center py-20 text-gray-400"><p className="text-xl">No hay alumnos registrados aún.</p><p className="mt-2">¡Inicia sesión como Admin y haz clic en "Agregar Alumno" para comenzar!</p></div>
+              )}
+            </main>
+          </div>
+
+          {}
+          {/* Modal Nuevo Alumno */}
+          {isAddModalOpen && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+              <div className="bg-gray-900 border border-yellow-600/30 rounded-2xl shadow-2xl w-full max-w-md relative overflow-hidden">
+                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-yellow-300 to-yellow-600"></div>
+                <button onClick={() => setIsAddModalOpen(false)} className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors"><CloseIcon /></button>
+                <div className="p-8">
+                  <h2 className="text-2xl font-serif-elegant font-bold text-white mb-6">Nuevo Alumno</h2>
+                  <form onSubmit={handleAddStudent} className="space-y-4">
+                    <div><label className="block text-sm font-medium text-gray-400 mb-1">Nombre Completo</label><input type="text" required className="w-full bg-gray-800 border border-gray-700 text-white rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent transition-all" placeholder="Ej. Ana García" value={newStudent.name} onChange={(e) => setNewStudent({...newStudent, name: e.target.value})} /></div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-400 mb-1">Fotografía</label>
+                      <div className="flex flex-col gap-2">
+                        <input type="text" className="w-full bg-gray-800 border border-gray-700 text-white rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-yellow-500 transition-all" placeholder="Pegar URL aquí..." value={newStudent.imageUrl} onChange={(e) => setNewStudent({...newStudent, imageUrl: e.target.value})} />
+                        <input type="file" accept="image/*" className="w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-yellow-600 file:text-black hover:file:bg-yellow-500 transition-all cursor-pointer" onChange={(e) => handleFileUpload(e, (url) => setNewStudent({...newStudent, imageUrl: url}))} />
+                      </div>
+                    </div>
+                    <div className="flex items-center mt-2 mb-4">
+                      <input type="checkbox" id="isDeceased" className="w-4 h-4 text-yellow-500 bg-gray-800 border-gray-700 rounded focus:ring-yellow-500 focus:ring-2 cursor-pointer" checked={newStudent.isDeceased} onChange={(e) => setNewStudent({...newStudent, isDeceased: e.target.checked})} />
+                      <label htmlFor="isDeceased" className="ml-2 text-sm font-medium text-gray-400 cursor-pointer">Agregar listón de luto</label>
+                    </div>
+                    <div><label className="block text-sm font-medium text-gray-400 mb-1">Frase (Opcional)</label><textarea className="w-full bg-gray-800 border border-gray-700 text-white rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent transition-all" placeholder="Frase inspiradora..." rows="3" value={newStudent.quote} onChange={(e) => setNewStudent({...newStudent, quote: e.target.value})}></textarea></div>
+                    <div className="pt-4"><button type="submit" className="w-full bg-gradient-to-r from-yellow-600 to-yellow-500 hover:from-yellow-500 hover:to-yellow-400 text-black font-bold py-3 px-4 rounded-lg shadow-lg transition-transform transform hover:scale-[1.02]">Guardar Alumno</button></div>
+                  </form>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Modal Cambiar Fondo */}
+          {isBgModalOpen && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+              <div className="bg-gray-900 border border-white/20 rounded-2xl shadow-2xl w-full max-w-md relative overflow-hidden">
+                <button onClick={() => setIsBgModalOpen(false)} className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors"><CloseIcon /></button>
+                <div className="p-8">
+                  <h2 className="text-2xl font-serif-elegant font-bold text-white mb-6">Personalizar Fondo</h2>
+                  <form onSubmit={handleChangeBackground} className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-400 mb-2">Color CSS, URL o subir imagen local</label>
+                      <div className="flex flex-col gap-2">
+                        <input type="text" className="w-full bg-gray-800 border border-gray-700 text-white rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-white/50 transition-all" placeholder="Ej. https://... o #1a1a1a" value={newBgInput} onChange={(e) => setNewBgInput(e.target.value)} />
+                        <input type="file" accept="image/*" className="w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-gray-700 file:text-white hover:file:bg-gray-600 transition-all cursor-pointer" onChange={(e) => handleFileUpload(e, (url) => setNewBgInput(url))} />
+                      </div>
+                    </div>
+                    <div className="pt-2 flex gap-3 flex-wrap">
+                      <p className="w-full text-xs text-gray-500 mb-1">Opciones rápidas:</p>
+                      <button type="button" onClick={() => setNewBgInput('linear-gradient(to bottom right, #111827, #000000)')} className="text-xs bg-gray-800 border border-gray-600 px-3 py-1 rounded hover:bg-gray-700">Oscuro Clásico</button>
+                      <button type="button" onClick={() => setNewBgInput('https://images.unsplash.com/photo-1519750783826-e2420f4d687f?auto=format&fit=crop&w=1920&q=80')} className="text-xs bg-gray-800 border border-gray-600 px-3 py-1 rounded hover:bg-gray-700">Madera Elegante</button>
+                      <button type="button" onClick={() => setNewBgInput('https://images.unsplash.com/photo-1557682250-33bd709cbe85?auto=format&fit=crop&w=1920&q=80')} className="text-xs bg-gray-800 border border-gray-600 px-3 py-1 rounded hover:bg-gray-700">Gradiente Cálido</button>
+                    </div>
+                    <div className="pt-4"><button type="submit" className="w-full bg-white hover:bg-gray-200 text-black font-bold py-3 px-4 rounded-lg shadow-lg transition-transform transform hover:scale-[1.02]">Aplicar Fondo</button></div>
+                  </form>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Modal Login */}
+          {isLoginModalOpen && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+              <div className="bg-gray-900 border border-yellow-600/30 rounded-2xl shadow-2xl w-full max-w-sm relative overflow-hidden">
+                <button onClick={() => setIsLoginModalOpen(false)} className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors"><CloseIcon /></button>
+                <div className="p-8">
+                  <h2 className="text-2xl font-serif-elegant font-bold text-white mb-6 text-center">Acceso Administrativo</h2>
+                  <form onSubmit={handleLogin} className="space-y-4">
+                    <div><label className="block text-sm font-medium text-gray-400 mb-1">Usuario</label><input type="text" required className={`w-full bg-gray-800 border ${loginError ? 'border-red-500' : 'border-gray-700'} text-white rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-yellow-500 transition-all`} placeholder="Usuario" value={adminUsername} onChange={(e) => setAdminUsername(e.target.value)} /></div>
+                    <div><label className="block text-sm font-medium text-gray-400 mb-1">Contraseña</label><input type="password" required className={`w-full bg-gray-800 border ${loginError ? 'border-red-500' : 'border-gray-700'} text-white rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-yellow-500 transition-all`} placeholder="••••••••" value={adminPassword} onChange={(e) => setAdminPassword(e.target.value)} />{loginError && <p className="text-red-500 text-xs mt-1">Credenciales incorrectas.</p>}</div>
+                    <div className="pt-4"><button type="submit" className="w-full bg-gradient-to-r from-yellow-600 to-yellow-500 hover:from-yellow-500 hover:to-yellow-400 text-black font-bold py-3 px-4 rounded-lg shadow-lg transition-transform transform hover:scale-[1.02]">Entrar</button></div>
+                  </form>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Modal Administradores */}
+          {isUsersModalOpen && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+              <div className="bg-gray-900 border border-white/20 rounded-2xl shadow-2xl w-full max-w-sm relative overflow-hidden">
+                <button onClick={() => setIsUsersModalOpen(false)} className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors"><CloseIcon /></button>
+                <div className="p-8">
+                  <h2 className="text-2xl font-serif-elegant font-bold text-white mb-6 text-center">Administradores</h2>
+                  <div className="mb-4 max-h-32 overflow-y-auto space-y-2 pr-1">
+                    {adminUsers.map(user => (
+                      <div key={user.id} className="flex justify-between items-center bg-gray-800 p-3 rounded-lg border border-gray-700"><span className="text-gray-300 font-medium">{user.username}</span><button onClick={() => handleDeleteAdmin(user.id)} className="text-red-500 hover:text-red-400 p-1 transition-colors" title="Eliminar"><TrashIcon /></button></div>
+                    ))}
+                  </div>
+                  {adminError && <p className="text-red-500 text-xs mb-4 text-center font-semibold">{adminError}</p>}
+                  <h3 className="text-lg font-serif-elegant font-bold text-gray-300 mb-4 border-t border-gray-700 pt-4">Agregar Nuevo</h3>
+                  <form onSubmit={handleAddAdmin} className="space-y-4">
+                    <div><input type="text" required className="w-full bg-gray-800 border border-gray-700 text-white rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-yellow-500 transition-all" placeholder="Nuevo Usuario" value={newUser.username} onChange={(e) => setNewUser({...newUser, username: e.target.value})} /></div>
+                    <div><input type="password" required className="w-full bg-gray-800 border border-gray-700 text-white rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-yellow-500 transition-all" placeholder="Nueva Contraseña" value={newUser.password} onChange={(e) => setNewUser({...newUser, password: e.target.value})} /></div>
+                    <div className="pt-2"><button type="submit" className="w-full bg-white hover:bg-gray-200 text-black font-bold py-2.5 px-4 rounded-lg shadow-lg transition-transform transform hover:scale-[1.02]">Agregar Admin</button></div>
+                  </form>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>
