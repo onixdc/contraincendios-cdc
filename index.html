@@ -4,61 +4,54 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Contra Incendios</title>
-  <link rel="icon" type="image/png" href="logo.png">
-  <!-- Estas etiquetas importan React directamente al navegador -->
+  
+  <link rel="icon" type="image/png" href="https://cdn-icons-png.flaticon.com/512/3246/3246283.png" />
+  
+  <!-- Dependencias de React y Tailwind -->
   <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
-  <!-- Babel nos permite compilar el código JSX al instante -->
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-  <!-- Tailwind CSS para el diseño -->
   <script src="https://cdn.tailwindcss.com"></script>
-  
 </head>
-<body>
-  <!-- Contenedor principal donde React inyectará la aplicación -->
+<body class="bg-gray-900">
   <div id="root"></div>
 
-  <script type="text/babel">
+  <!-- Utilizamos data-type="module" para poder importar Firebase modularmente -->
+  <script type="text/babel" data-type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    import { getFirestore, collection, onSnapshot, doc, setDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
     const { useState, useEffect } = React;
 
+    // --- Configuración de Base de Datos Nube (Firebase) ---
+    // Estas variables se proporcionan automáticamente en el entorno de la plataforma.
+    const firebaseConfig = typeof window.__firebase_config !== 'undefined' ? JSON.parse(window.__firebase_config) : {};
+    const appId = typeof window.__app_id !== 'undefined' ? window.__app_id : 'anuario-app';
+    
+    let app, auth, db;
+    try {
+      app = initializeApp(firebaseConfig);
+      auth = getAuth(app);
+      db = getFirestore(app);
+    } catch (e) {
+      console.error("Error inicializando Firebase. Asegúrate de estar en el entorno correcto.");
+    }
+
     // --- Componentes de Iconos ---
-    const PlusIcon = () => (
-      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-    );
-
-    const ImageIcon = () => (
-      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
-    );
-
-    const CloseIcon = () => (
-      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-    );
-
-    const TrashIcon = () => (
-      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
-    );
-
-    const LockIcon = () => (
-      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
-    );
-
-    const UnlockIcon = () => (
-      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg>
-    );
-
-    const UsersIcon = () => (
-      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
-    );
-
-    // --- Datos de prueba ---
-    const initialStudents = [
-      { id: '1', name: 'Alejandro Gómez', quote: 'El éxito es la suma de pequeños esfuerzos diarios.', imageUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=400&q=80', isDeceased: false },
-      { id: '2', name: 'Sofía Martínez', quote: 'Nunca dejes de aprender y explorar el mundo.', imageUrl: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=400&q=80', isDeceased: false },
-      { id: '3', name: 'Diego Rodríguez', quote: 'La creatividad es la inteligencia divirtiéndose.', imageUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&q=80', isDeceased: false },
-      { id: '4', name: 'Valentina López', quote: 'El futuro pertenece a quienes creen en la belleza de sus sueños.', imageUrl: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&w=400&q=80', isDeceased: false }
-    ];
+    const PlusIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>;
+    const ImageIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>;
+    const CloseIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>;
+    const TrashIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>;
+    const LockIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>;
+    const UnlockIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg>;
+    const UsersIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>;
 
     function App() {
+      // Estado de Base de Datos
+      const [user, setUser] = useState(null);
+      const [loadingData, setLoadingData] = useState(true);
+
       // Estados de los datos principales
       const [students, setStudents] = useState([]);
       const [background, setBackground] = useState('linear-gradient(to bottom right, #111827, #000000)');
@@ -69,9 +62,9 @@
       const [adminUsername, setAdminUsername] = useState('');
       const [adminPassword, setAdminPassword] = useState('');
       const [loginError, setLoginError] = useState(false);
-      const [adminUsers, setAdminUsers] = useState([{ id: '1', username: 'admin', password: 'admin123' }]);
+      const [adminUsers, setAdminUsers] = useState([]); // Ahora viene de la nube
 
-      // Estados para abrir ventanas (Modales)
+      // Estados para modales
       const [isAddModalOpen, setIsAddModalOpen] = useState(false);
       const [isBgModalOpen, setIsBgModalOpen] = useState(false);
       const [isUsersModalOpen, setIsUsersModalOpen] = useState(false);
@@ -82,53 +75,111 @@
       const [newUser, setNewUser] = useState({ username: '', password: '' });
       const [adminError, setAdminError] = useState('');
 
-      // Cargar datos al entrar a la página
+      // 1. Inicialización de Autenticación
       useEffect(() => {
-        const savedStudents = localStorage.getItem('anuario_students');
-        const savedBg = localStorage.getItem('anuario_background');
-        const savedAdmins = localStorage.getItem('anuario_admin_users');
-        
-        if (savedStudents) setStudents(JSON.parse(savedStudents));
-        else setStudents(initialStudents);
-
-        if (savedBg) setBackground(savedBg);
-        if (savedAdmins) setAdminUsers(JSON.parse(savedAdmins));
+        if (!auth) return;
+        const initAuth = async () => {
+          try {
+            if (typeof window.__initial_auth_token !== 'undefined' && window.__initial_auth_token) {
+              await signInWithCustomToken(auth, window.__initial_auth_token);
+            } else {
+              await signInAnonymously(auth);
+            }
+          } catch (error) {
+            console.error("Error autenticando:", error);
+          }
+        };
+        initAuth();
+        const unsubscribe = onAuthStateChanged(auth, setUser);
+        return () => unsubscribe();
       }, []);
 
-      // Autoguardar cuando haya cambios
+      // 2. Cargar datos en Tiempo Real desde la Nube
       useEffect(() => {
-        if (students.length > 0) localStorage.setItem('anuario_students', JSON.stringify(students));
-      }, [students]);
+        if (!user || !db) return;
 
-      useEffect(() => {
-        localStorage.setItem('anuario_background', background);
-      }, [background]);
+        // Escuchar configuración (Fondo y Administradores)
+        const configRef = doc(db, 'artifacts', appId, 'public', 'data', 'config', 'main');
+        const unsubConfig = onSnapshot(configRef, (docSnap) => {
+          if (docSnap.exists()) {
+            const data = docSnap.data();
+            if (data.background) setBackground(data.background);
+            if (data.adminUsers) setAdminUsers(data.adminUsers);
+          } else {
+            // Si es la primera vez que se abre la página, crear la configuración por defecto en la nube
+            const defaultAdmins = [{ id: '1', username: 'admin', password: 'admin123' }];
+            setDoc(configRef, { 
+              background: 'linear-gradient(to bottom right, #111827, #000000)', 
+              adminUsers: defaultAdmins 
+            });
+            setAdminUsers(defaultAdmins);
+          }
+          setLoadingData(false);
+        }, (err) => console.error("Error leyendo config:", err));
 
-      useEffect(() => {
-        localStorage.setItem('anuario_admin_users', JSON.stringify(adminUsers));
-      }, [adminUsers]);
+        // Escuchar alumnos
+        const studentsRef = collection(db, 'artifacts', appId, 'public', 'data', 'students');
+        const unsubStudents = onSnapshot(studentsRef, (snapshot) => {
+          const list = [];
+          snapshot.forEach(d => list.push({ id: d.id, ...d.data() }));
+          // Ordenamos por fecha de creación para mantener el orden
+          setStudents(list.sort((a, b) => a.createdAt - b.createdAt));
+        }, (err) => console.error("Error leyendo alumnos:", err));
 
-      // Función para procesar imágenes locales y convertirlas a código Base64
+        return () => { unsubConfig(); unsubStudents(); };
+      }, [user]);
+
+      // --- Optimizador de Imágenes ---
+      // Comprime imágenes pesadas antes de guardarlas en la nube para no llenar la base de datos.
       const handleFileUpload = (e, callback) => {
         const file = e.target.files[0];
         if (file) {
           const reader = new FileReader();
-          reader.onloadend = () => callback(reader.result);
+          reader.onloadend = () => {
+            const img = new Image();
+            img.onload = () => {
+              const canvas = document.createElement('canvas');
+              const MAX_WIDTH = 800; // Resolución máxima
+              const MAX_HEIGHT = 800;
+              let width = img.width;
+              let height = img.height;
+
+              if (width > height) {
+                if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; }
+              } else {
+                if (height > MAX_HEIGHT) { width *= MAX_HEIGHT / height; height = MAX_HEIGHT; }
+              }
+              canvas.width = width; canvas.height = height;
+              const ctx = canvas.getContext('2d');
+              ctx.drawImage(img, 0, 0, width, height);
+              // Comprimir a JPEG con calidad 70%
+              callback(canvas.toDataURL('image/jpeg', 0.7)); 
+            };
+            img.src = reader.result;
+          };
           reader.readAsDataURL(file);
         }
       };
 
-      const handleAddStudent = (e) => {
+      // --- Funciones Modificadas para Guardar en Nube ---
+      const handleAddStudent = async (e) => {
         e.preventDefault();
-        if (!newStudent.name || !newStudent.imageUrl) return;
-        const studentToAdd = { ...newStudent, id: Date.now().toString() };
-        setStudents([...students, studentToAdd]);
+        if (!newStudent.name || !newStudent.imageUrl || !db) return;
+        
+        const studentId = Date.now().toString();
+        const studentToAdd = { ...newStudent, createdAt: Date.now() };
+        
+        // Guardar en la Nube
+        await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'students', studentId), studentToAdd);
+        
         setNewStudent({ name: '', quote: '', imageUrl: '', isDeceased: false });
         setIsAddModalOpen(false);
       };
 
-      const handleDeleteStudent = (id) => {
-        setStudents(students.filter(student => student.id !== id));
+      const handleDeleteStudent = async (id) => {
+        if (!db) return;
+        // Eliminar de la Nube
+        await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'students', id));
       };
 
       const handleLogin = (e) => {
@@ -141,34 +192,48 @@
         }
       };
 
-      const handleAddAdmin = (e) => {
+      const handleAddAdmin = async (e) => {
         e.preventDefault();
         if (adminUsers.some(u => u.username === newUser.username)) { setAdminError('Ese nombre de usuario ya existe.'); return; }
-        if (newUser.username && newUser.password) {
-          setAdminUsers([...adminUsers, { id: Date.now().toString(), username: newUser.username, password: newUser.password }]);
+        if (newUser.username && newUser.password && db) {
+          const newAdminsList = [...adminUsers, { id: Date.now().toString(), username: newUser.username, password: newUser.password }];
+          // Actualizar en Nube
+          await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'config', 'main'), { adminUsers: newAdminsList }, { merge: true });
           setNewUser({ username: '', password: '' });
           setAdminError('');
         }
       };
 
-      const handleDeleteAdmin = (id) => {
+      const handleDeleteAdmin = async (id) => {
         if (adminUsers.length <= 1) { setAdminError('Debe haber al menos un administrador en el sistema.'); return; }
-        setAdminUsers(adminUsers.filter(u => u.id !== id));
+        if (!db) return;
+        const newAdminsList = adminUsers.filter(u => u.id !== id);
+        // Eliminar en Nube
+        await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'config', 'main'), { adminUsers: newAdminsList }, { merge: true });
         setAdminError('');
       };
 
-      const handleChangeBackground = (e) => {
+      const handleChangeBackground = async (e) => {
         e.preventDefault();
-        if (!newBgInput) return;
+        if (!newBgInput || !db) return;
         let finalBg = newBgInput;
-        // Permite URLs largas y locales sin romperse
         if (newBgInput.startsWith('http') || newBgInput.startsWith('data:image')) {
           finalBg = `url("${newBgInput}")`; 
         }
-        setBackground(finalBg);
+        // Guardar en Nube
+        await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'config', 'main'), { background: finalBg }, { merge: true });
         setNewBgInput('');
         setIsBgModalOpen(false);
       };
+
+      if (loadingData) {
+        return (
+          <div className="min-h-screen bg-gray-900 flex flex-col items-center justify-center text-white">
+            <div className="w-12 h-12 border-4 border-yellow-500 border-t-transparent rounded-full animate-spin mb-4"></div>
+            <p className="font-serif-elegant text-xl">Cargando Anuario...</p>
+          </div>
+        );
+      }
 
       return (
         <div className="dynamic-bg min-h-screen text-white font-sans transition-all duration-500" style={{ '--dynamic-bg-value': background }}>
@@ -240,7 +305,6 @@
             </main>
           </div>
 
-          {}
           {/* Modal Nuevo Alumno */}
           {isAddModalOpen && (
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
@@ -252,7 +316,7 @@
                   <form onSubmit={handleAddStudent} className="space-y-4">
                     <div><label className="block text-sm font-medium text-gray-400 mb-1">Nombre Completo</label><input type="text" required className="w-full bg-gray-800 border border-gray-700 text-white rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent transition-all" placeholder="Ej. Ana García" value={newStudent.name} onChange={(e) => setNewStudent({...newStudent, name: e.target.value})} /></div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-400 mb-1">Fotografía</label>
+                      <label className="block text-sm font-medium text-gray-400 mb-1">Fotografía (Se optimizará automáticamente)</label>
                       <div className="flex flex-col gap-2">
                         <input type="text" className="w-full bg-gray-800 border border-gray-700 text-white rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-yellow-500 transition-all" placeholder="Pegar URL aquí..." value={newStudent.imageUrl} onChange={(e) => setNewStudent({...newStudent, imageUrl: e.target.value})} />
                         <input type="file" accept="image/*" className="w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-yellow-600 file:text-black hover:file:bg-yellow-500 transition-all cursor-pointer" onChange={(e) => handleFileUpload(e, (url) => setNewStudent({...newStudent, imageUrl: url}))} />
@@ -272,7 +336,7 @@
 
           {/* Modal Cambiar Fondo */}
           {isBgModalOpen && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-[1px]">
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
               <div className="bg-gray-900 border border-white/20 rounded-2xl shadow-2xl w-full max-w-md relative overflow-hidden">
                 <button onClick={() => setIsBgModalOpen(false)} className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors"><CloseIcon /></button>
                 <div className="p-8">
