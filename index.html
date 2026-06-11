@@ -4,8 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Contra Incendios</title>
+  <link rel="icon" type="image/png" href="logo.png" />
   
-  <link rel="icon" type="image/png" href="https://cdn-icons-png.flaticon.com/512/3246/3246283.png" />
   
   <!-- Dependencias de React y Tailwind -->
   <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
@@ -16,27 +16,8 @@
 <body class="bg-gray-900">
   <div id="root"></div>
 
-  <!-- Utilizamos data-type="module" para poder importar Firebase modularmente -->
-  <script type="text/babel" data-type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-    import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-    import { getFirestore, collection, onSnapshot, doc, setDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
+  <script type="text/babel">
     const { useState, useEffect } = React;
-
-    // --- Configuración de Base de Datos Nube (Firebase) ---
-    // Estas variables se proporcionan automáticamente en el entorno de la plataforma.
-    const firebaseConfig = typeof window.__firebase_config !== 'undefined' ? JSON.parse(window.__firebase_config) : {};
-    const appId = typeof window.__app_id !== 'undefined' ? window.__app_id : 'anuario-app';
-    
-    let app, auth, db;
-    try {
-      app = initializeApp(firebaseConfig);
-      auth = getAuth(app);
-      db = getFirestore(app);
-    } catch (e) {
-      console.error("Error inicializando Firebase. Asegúrate de estar en el entorno correcto.");
-    }
 
     // --- Componentes de Iconos ---
     const PlusIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>;
@@ -46,28 +27,43 @@
     const LockIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>;
     const UnlockIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg>;
     const UsersIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>;
+    const DownloadIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>;
+
+    // =====================================================================
+    // LISTA DE ALUMNOS (AQUÍ PEGARÁS LO QUE COPIES DEL BOTÓN VERDE)
+    // =====================================================================
+    const initialStudents = [];
+
+    // =====================================================================
+    // FONDO INICIAL DE LA PÁGINA PARA TODOS
+    // Si subes un archivo a GitHub (ej. "mifondo.jpg"), ponlo así: 'url("mifondo.jpg")'
+    // =====================================================================
+    const initialBackground = 'linear-gradient(to bottom right, #111827, #000000)';
+
+    // =====================================================================
+    // LISTA DE ADMINISTRADORES INICIAL
+    // =====================================================================
+    const initialAdmins = [{ id: '1', username: 'admin', password: 'admin123' }];
+
 
     function App() {
-      // Estado de Base de Datos
-      const [user, setUser] = useState(null);
-      const [loadingData, setLoadingData] = useState(true);
-
-      // Estados de los datos principales
+      // Estados de los datos principales usando las constantes iniciales
       const [students, setStudents] = useState([]);
-      const [background, setBackground] = useState('linear-gradient(to bottom right, #111827, #000000)');
+      const [background, setBackground] = useState(initialBackground);
+      const [adminUsers, setAdminUsers] = useState(initialAdmins);
       
-      // Estados de seguridad y administradores
+      // Estados de seguridad
       const [isAdmin, setIsAdmin] = useState(false);
       const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
       const [adminUsername, setAdminUsername] = useState('');
       const [adminPassword, setAdminPassword] = useState('');
       const [loginError, setLoginError] = useState(false);
-      const [adminUsers, setAdminUsers] = useState([]); // Ahora viene de la nube
 
       // Estados para modales
       const [isAddModalOpen, setIsAddModalOpen] = useState(false);
       const [isBgModalOpen, setIsBgModalOpen] = useState(false);
       const [isUsersModalOpen, setIsUsersModalOpen] = useState(false);
+      const [isExportModalOpen, setIsExportModalOpen] = useState(false);
       
       // Estados para formularios de registro
       const [newStudent, setNewStudent] = useState({ name: '', quote: '', imageUrl: '', isDeceased: false });
@@ -75,62 +71,37 @@
       const [newUser, setNewUser] = useState({ username: '', password: '' });
       const [adminError, setAdminError] = useState('');
 
-      // 1. Inicialización de Autenticación
+      // Cargar datos locales al iniciar
       useEffect(() => {
-        if (!auth) return;
-        const initAuth = async () => {
-          try {
-            if (typeof window.__initial_auth_token !== 'undefined' && window.__initial_auth_token) {
-              await signInWithCustomToken(auth, window.__initial_auth_token);
-            } else {
-              await signInAnonymously(auth);
-            }
-          } catch (error) {
-            console.error("Error autenticando:", error);
-          }
-        };
-        initAuth();
-        const unsubscribe = onAuthStateChanged(auth, setUser);
-        return () => unsubscribe();
+        const savedStudents = localStorage.getItem('anuario_students');
+        const savedBg = localStorage.getItem('anuario_background');
+        const savedAdmins = localStorage.getItem('anuario_admin_users');
+        
+        if (savedStudents && JSON.parse(savedStudents).length > 0) {
+          setStudents(JSON.parse(savedStudents));
+        } else {
+          setStudents(initialStudents);
+        }
+        
+        if (savedBg) {
+          setBackground(savedBg);
+        } else {
+          setBackground(initialBackground);
+        }
+
+        if (savedAdmins && JSON.parse(savedAdmins).length > 0) {
+          setAdminUsers(JSON.parse(savedAdmins));
+        } else {
+          setAdminUsers(initialAdmins);
+        }
       }, []);
 
-      // 2. Cargar datos en Tiempo Real desde la Nube
-      useEffect(() => {
-        if (!user || !db) return;
+      // Guardar localmente
+      useEffect(() => { localStorage.setItem('anuario_students', JSON.stringify(students)); }, [students]);
+      useEffect(() => { localStorage.setItem('anuario_background', background); }, [background]);
+      useEffect(() => { localStorage.setItem('anuario_admin_users', JSON.stringify(adminUsers)); }, [adminUsers]);
 
-        // Escuchar configuración (Fondo y Administradores)
-        const configRef = doc(db, 'artifacts', appId, 'public', 'data', 'config', 'main');
-        const unsubConfig = onSnapshot(configRef, (docSnap) => {
-          if (docSnap.exists()) {
-            const data = docSnap.data();
-            if (data.background) setBackground(data.background);
-            if (data.adminUsers) setAdminUsers(data.adminUsers);
-          } else {
-            // Si es la primera vez que se abre la página, crear la configuración por defecto en la nube
-            const defaultAdmins = [{ id: '1', username: 'admin', password: 'admin123' }];
-            setDoc(configRef, { 
-              background: 'linear-gradient(to bottom right, #111827, #000000)', 
-              adminUsers: defaultAdmins 
-            });
-            setAdminUsers(defaultAdmins);
-          }
-          setLoadingData(false);
-        }, (err) => console.error("Error leyendo config:", err));
-
-        // Escuchar alumnos
-        const studentsRef = collection(db, 'artifacts', appId, 'public', 'data', 'students');
-        const unsubStudents = onSnapshot(studentsRef, (snapshot) => {
-          const list = [];
-          snapshot.forEach(d => list.push({ id: d.id, ...d.data() }));
-          // Ordenamos por fecha de creación para mantener el orden
-          setStudents(list.sort((a, b) => a.createdAt - b.createdAt));
-        }, (err) => console.error("Error leyendo alumnos:", err));
-
-        return () => { unsubConfig(); unsubStudents(); };
-      }, [user]);
-
-      // --- Optimizador de Imágenes ---
-      // Comprime imágenes pesadas antes de guardarlas en la nube para no llenar la base de datos.
+      // --- Optimizador de Imágenes (Comprimir archivos locales Base64) ---
       const handleFileUpload = (e, callback) => {
         const file = e.target.files[0];
         if (file) {
@@ -139,8 +110,8 @@
             const img = new Image();
             img.onload = () => {
               const canvas = document.createElement('canvas');
-              const MAX_WIDTH = 800; // Resolución máxima
-              const MAX_HEIGHT = 800;
+              const MAX_WIDTH = 600; 
+              const MAX_HEIGHT = 600;
               let width = img.width;
               let height = img.height;
 
@@ -152,8 +123,8 @@
               canvas.width = width; canvas.height = height;
               const ctx = canvas.getContext('2d');
               ctx.drawImage(img, 0, 0, width, height);
-              // Comprimir a JPEG con calidad 70%
-              callback(canvas.toDataURL('image/jpeg', 0.7)); 
+              // Comprimir a JPEG ligero para que GitHub no se sature al pegar el código
+              callback(canvas.toDataURL('image/jpeg', 0.6)); 
             };
             img.src = reader.result;
           };
@@ -161,25 +132,17 @@
         }
       };
 
-      // --- Funciones Modificadas para Guardar en Nube ---
-      const handleAddStudent = async (e) => {
+      const handleAddStudent = (e) => {
         e.preventDefault();
-        if (!newStudent.name || !newStudent.imageUrl || !db) return;
-        
-        const studentId = Date.now().toString();
-        const studentToAdd = { ...newStudent, createdAt: Date.now() };
-        
-        // Guardar en la Nube
-        await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'students', studentId), studentToAdd);
-        
+        if (!newStudent.name || !newStudent.imageUrl) return;
+        const studentToAdd = { ...newStudent, id: Date.now().toString() };
+        setStudents([...students, studentToAdd]);
         setNewStudent({ name: '', quote: '', imageUrl: '', isDeceased: false });
         setIsAddModalOpen(false);
       };
 
-      const handleDeleteStudent = async (id) => {
-        if (!db) return;
-        // Eliminar de la Nube
-        await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'students', id));
+      const handleDeleteStudent = (id) => {
+        setStudents(students.filter(student => student.id !== id));
       };
 
       const handleLogin = (e) => {
@@ -192,48 +155,38 @@
         }
       };
 
-      const handleAddAdmin = async (e) => {
+      const handleAddAdmin = (e) => {
         e.preventDefault();
-        if (adminUsers.some(u => u.username === newUser.username)) { setAdminError('Ese nombre de usuario ya existe.'); return; }
-        if (newUser.username && newUser.password && db) {
-          const newAdminsList = [...adminUsers, { id: Date.now().toString(), username: newUser.username, password: newUser.password }];
-          // Actualizar en Nube
-          await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'config', 'main'), { adminUsers: newAdminsList }, { merge: true });
+        if (adminUsers.some(u => u.username === newUser.username)) { setAdminError('Ese usuario ya existe.'); return; }
+        if (newUser.username && newUser.password) {
+          setAdminUsers([...adminUsers, { id: Date.now().toString(), username: newUser.username, password: newUser.password }]);
           setNewUser({ username: '', password: '' });
           setAdminError('');
         }
       };
 
-      const handleDeleteAdmin = async (id) => {
-        if (adminUsers.length <= 1) { setAdminError('Debe haber al menos un administrador en el sistema.'); return; }
-        if (!db) return;
-        const newAdminsList = adminUsers.filter(u => u.id !== id);
-        // Eliminar en Nube
-        await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'config', 'main'), { adminUsers: newAdminsList }, { merge: true });
+      const handleDeleteAdmin = (id) => {
+        if (adminUsers.length <= 1) { setAdminError('Debe haber al menos 1 admin.'); return; }
+        setAdminUsers(adminUsers.filter(u => u.id !== id));
         setAdminError('');
       };
 
-      const handleChangeBackground = async (e) => {
+      const handleChangeBackground = (e) => {
         e.preventDefault();
-        if (!newBgInput || !db) return;
+        if (!newBgInput) return;
         let finalBg = newBgInput;
-        if (newBgInput.startsWith('http') || newBgInput.startsWith('data:image')) {
+        // Ahora si pones solo el nombre del archivo (ej. foto.jpg), lo tratará como URL de imagen para GitHub
+        if (newBgInput.startsWith('http') || newBgInput.startsWith('data:image') || newBgInput.includes('.')) {
           finalBg = `url("${newBgInput}")`; 
         }
-        // Guardar en Nube
-        await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'config', 'main'), { background: finalBg }, { merge: true });
+        setBackground(finalBg);
         setNewBgInput('');
         setIsBgModalOpen(false);
       };
 
-      if (loadingData) {
-        return (
-          <div className="min-h-screen bg-gray-900 flex flex-col items-center justify-center text-white">
-            <div className="w-12 h-12 border-4 border-yellow-500 border-t-transparent rounded-full animate-spin mb-4"></div>
-            <p className="font-serif-elegant text-xl">Cargando...</p>
-          </div>
-        );
-      }
+      // Limpieza y generación del código para exportar
+      const exportStudentsCode = JSON.stringify(students, null, 2);
+      const exportAdminsCode = JSON.stringify(adminUsers, null, 2);
 
       return (
         <div className="dynamic-bg min-h-screen text-white font-sans transition-all duration-500" style={{ '--dynamic-bg-value': background }}>
@@ -242,22 +195,28 @@
               .dynamic-bg { background: var(--dynamic-bg-value); background-size: cover; background-position: center; background-attachment: fixed; background-repeat: no-repeat; }
               @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap');
               .font-serif-elegant { font-family: 'Playfair Display', serif; }
-              .shine-frame { position: relative; overflow: hidden; border-radius: 12px; transition: all 0.3s ease; box-shadow: inset 0 0 0 2px rgba(212, 175, 55, 0.8), 0 0 0 3px #8a6e2f, 0 0 0 6px #d4af37, 0 0 0 7px #f1e5ac, 0 0 0 9px #8a6e2f, 0 15px 35px -10px rgba(0, 0, 0, 0.6); }
+              .shine-frame { position: relative; transition: all 0.3s ease;
+                background-image: url('d46e915a-ec89-4b65-b47a-8bf16595c147.jpg');
+                background-size: 100% 100%;
+                background-repeat: no-repeat;
+                padding: 28px;
+                box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.8);
+              }
               .shine-frame::after { content: ''; position: absolute; top: 0; left: -150%; width: 50%; height: 100%; background: linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(255,255,255,0.4) 50%, rgba(255,255,255,0) 100%); transform: skewX(-25deg); transition: left 0.7s ease; z-index: 10; pointer-events: none; }
               .group:hover .shine-frame::after { left: 200%; }
-              .group:hover .shine-frame { transform: translateY(-5px); box-shadow: inset 0 0 0 2px rgba(212, 175, 55, 1), 0 0 0 3px #8a6e2f, 0 0 0 6px #eac76c, 0 0 0 7px #fff2c2, 0 0 0 9px #8a6e2f, 0 20px 40px -10px rgba(0, 0, 0, 0.7); }
+              .group:hover .shine-frame { transform: translateY(-5px); box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.9); }
               .bg-overlay { background-color: rgba(0, 0, 0, 0.6); backdrop-filter: blur(0px); }
             `}
           </style>
 
           <div className="bg-overlay min-h-screen pb-20">
-            {/* Header del sitio */}
+            {/* Header */}
             <header className="py-12 px-6 text-center relative">
               <div className="absolute top-6 right-6">
                 {isAdmin ? (
-                  <button onClick={() => setIsAdmin(false)} className="text-gray-400 hover:text-white transition-colors flex flex-col items-center gap-1" title="Cerrar sesión"><UnlockIcon /><span className="text-xs">Salir Admin</span></button>
+                  <button onClick={() => setIsAdmin(false)} className="text-gray-400 hover:text-white transition-colors flex flex-col items-center gap-1"><UnlockIcon /><span className="text-xs">Salir Admin</span></button>
                 ) : (
-                  <button onClick={() => setIsLoginModalOpen(true)} className="text-gray-400 hover:text-white transition-colors flex flex-col items-center gap-1" title="Acceso Admin"><LockIcon /><span className="text-xs">Admin</span></button>
+                  <button onClick={() => setIsLoginModalOpen(true)} className="text-gray-400 hover:text-white transition-colors flex flex-col items-center gap-1"><LockIcon /><span className="text-xs">Admin</span></button>
                 )}
               </div>
               
@@ -268,8 +227,9 @@
               {isAdmin && (
                 <div className="flex flex-wrap justify-center gap-4">
                   <button onClick={() => setIsAddModalOpen(true)} className="flex items-center gap-2 bg-gradient-to-r from-yellow-600 to-yellow-500 hover:from-yellow-500 hover:to-yellow-400 text-black font-semibold py-2 px-6 rounded-full shadow-lg transition-all transform hover:scale-105"><PlusIcon /> Agregar Alumno</button>
-                  <button onClick={() => setIsBgModalOpen(true)} className="flex items-center gap-2 bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/20 text-white font-semibold py-2 px-6 rounded-full shadow-lg transition-all transform hover:scale-105"><ImageIcon /> Cambiar Fondo</button>
+                  <button onClick={() => setIsBgModalOpen(true)} className="flex items-center gap-2 bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/20 text-white font-semibold py-2 px-6 rounded-full shadow-lg transition-all transform hover:scale-105"><ImageIcon /> Cambiar Fondo (Local)</button>
                   <button onClick={() => { setIsUsersModalOpen(true); setAdminError(''); }} className="flex items-center gap-2 bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/20 text-white font-semibold py-2 px-6 rounded-full shadow-lg transition-all transform hover:scale-105"><UsersIcon /> Gestionar Admins</button>
+                  <button onClick={() => setIsExportModalOpen(true)} className="flex items-center gap-2 bg-green-600/80 hover:bg-green-500 text-white font-semibold py-2 px-6 rounded-full shadow-lg transition-all transform hover:scale-105 border border-green-400/50 ml-4"><DownloadIcon /> Exportar para GitHub</button>
                 </div>
               )}
             </header>
@@ -279,17 +239,17 @@
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-10">
                 {students.map((student) => (
                   <div key={student.id} className="group flex flex-col items-center">
-                    <div className="shine-frame w-64 h-80 relative bg-gray-900 cursor-pointer">
+                    <div className="shine-frame w-64 h-80 relative cursor-pointer">
                       {student.isDeceased && (
                         <div className="absolute top-0 right-0 w-20 h-20 overflow-hidden z-30 pointer-events-none">
                           <div className="absolute top-4 -right-8 w-32 bg-black text-gray-300 text-[10px] font-serif-elegant font-bold py-1 text-center transform rotate-45 shadow-[0_2px_4px_rgba(0,0,0,0.5)] border-y border-gray-600">En memoria</div>
                         </div>
                       )}
-                      <img src={student.imageUrl} alt={student.name} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" onError={(e) => { e.target.src = 'https://via.placeholder.com/400x500/1a1a1a/d4af37?text=Foto+No+Disponible'; }} />
+                      <img src={student.imageUrl} alt={student.name} className="w-full h-full object-cover rounded-lg transition-transform duration-700 group-hover:scale-105" onError={(e) => { e.target.src = 'https://via.placeholder.com/400x500/1a1a1a/d4af37?text=Foto+No+Disponible'; }} />
                       {isAdmin && (
                         <button onClick={() => handleDeleteStudent(student.id)} className="absolute top-2 right-2 p-2 bg-red-600/80 hover:bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity z-20" title="Eliminar alumno"><TrashIcon /></button>
                       )}
-                      <div className="absolute bottom-0 w-full p-4 bg-gradient-to-t from-black/90 via-black/50 to-transparent z-20">
+                      <div className="absolute bottom-[28px] w-[calc(100%-56px)] left-[28px] p-2 bg-gradient-to-t from-black/90 via-black/50 to-transparent z-20 rounded-b-lg">
                         <h3 className="font-serif-elegant text-xl font-bold text-yellow-400 text-center drop-shadow-md">{student.name}</h3>
                       </div>
                     </div>
@@ -305,6 +265,54 @@
             </main>
           </div>
 
+          {/* Modal Exportar a GitHub (MEJORADO) */}
+          {isExportModalOpen && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+              <div className="bg-gray-900 border border-green-500/50 rounded-2xl shadow-2xl w-full max-w-4xl relative overflow-hidden flex flex-col max-h-[95vh]">
+                <button onClick={() => setIsExportModalOpen(false)} className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors"><CloseIcon /></button>
+                <div className="p-8 flex flex-col h-full">
+                  <h2 className="text-2xl font-serif-elegant font-bold text-white mb-2">Paso final: Guardar Cambios en GitHub</h2>
+                  <p className="text-gray-400 text-sm mb-4">Para que los cambios sean públicos para todos, copia el bloque que necesites y reemplázalo en tu archivo <code>index.html</code> de GitHub.</p>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 flex-grow overflow-hidden mb-4">
+                    {/* Sección Alumnos */}
+                    <div className="flex flex-col bg-gray-950 p-4 rounded border border-gray-700">
+                      <h3 className="text-white font-bold mb-2">1. Lista de Alumnos</h3>
+                      <p className="text-xs text-gray-500 mb-2">Reemplaza <code>const initialStudents = [];</code> por:</p>
+                      <div className="overflow-y-auto flex-grow text-xs font-mono text-green-400 p-2 bg-black rounded">
+                        <pre><code>const initialStudents = {exportStudentsCode};</code></pre>
+                      </div>
+                      <button onClick={() => { navigator.clipboard.writeText(`const initialStudents = ${exportStudentsCode};`); alert('¡Código de ALUMNOS copiado!'); }} className="mt-3 w-full bg-green-600 hover:bg-green-500 text-white font-bold py-2 px-4 rounded transition-colors text-sm">Copiar Alumnos</button>
+                    </div>
+
+                    {/* Sección Administradores y Fondo */}
+                    <div className="flex flex-col gap-4">
+                      {/* Fondo */}
+                      <div className="flex flex-col bg-gray-950 p-4 rounded border border-gray-700 h-1/2">
+                        <h3 className="text-white font-bold mb-2">2. Fondo Actual</h3>
+                        <p className="text-xs text-gray-500 mb-2">Reemplaza <code>const initialBackground = ...;</code> por:</p>
+                        <div className="overflow-y-auto flex-grow text-xs font-mono text-blue-400 p-2 bg-black rounded flex items-center">
+                          <code>const initialBackground = '{background}';</code>
+                        </div>
+                        <button onClick={() => { navigator.clipboard.writeText(`const initialBackground = '${background}';`); alert('¡Código de FONDO copiado!'); }} className="mt-3 w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 px-4 rounded transition-colors text-sm">Copiar Fondo</button>
+                      </div>
+
+                      {/* Admins */}
+                      <div className="flex flex-col bg-gray-950 p-4 rounded border border-gray-700 h-1/2">
+                        <h3 className="text-white font-bold mb-2">3. Administradores</h3>
+                        <p className="text-xs text-gray-500 mb-2">Reemplaza <code>const initialAdmins = [...];</code> por:</p>
+                        <div className="overflow-y-auto flex-grow text-xs font-mono text-purple-400 p-2 bg-black rounded">
+                          <pre><code>const initialAdmins = {exportAdminsCode};</code></pre>
+                        </div>
+                        <button onClick={() => { navigator.clipboard.writeText(`const initialAdmins = ${exportAdminsCode};`); alert('¡Código de ADMINS copiado!'); }} className="mt-3 w-full bg-purple-600 hover:bg-purple-500 text-white font-bold py-2 px-4 rounded transition-colors text-sm">Copiar Admins</button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Modal Nuevo Alumno */}
           {isAddModalOpen && (
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
@@ -316,9 +324,9 @@
                   <form onSubmit={handleAddStudent} className="space-y-4">
                     <div><label className="block text-sm font-medium text-gray-400 mb-1">Nombre Completo</label><input type="text" required className="w-full bg-gray-800 border border-gray-700 text-white rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent transition-all" placeholder="Ej. Ana García" value={newStudent.name} onChange={(e) => setNewStudent({...newStudent, name: e.target.value})} /></div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-400 mb-1">Fotografía (Se optimizará automáticamente)</label>
+                      <label className="block text-sm font-medium text-gray-400 mb-1">Fotografía (Nombre archivo local o subir)</label>
                       <div className="flex flex-col gap-2">
-                        <input type="text" className="w-full bg-gray-800 border border-gray-700 text-white rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-yellow-500 transition-all" placeholder="Pegar URL aquí..." value={newStudent.imageUrl} onChange={(e) => setNewStudent({...newStudent, imageUrl: e.target.value})} />
+                        <input type="text" className="w-full bg-gray-800 border border-gray-700 text-white rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-yellow-500 transition-all" placeholder="Ej. alumno1.jpg o Pegar URL" value={newStudent.imageUrl} onChange={(e) => setNewStudent({...newStudent, imageUrl: e.target.value})} />
                         <input type="file" accept="image/*" className="w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-yellow-600 file:text-black hover:file:bg-yellow-500 transition-all cursor-pointer" onChange={(e) => handleFileUpload(e, (url) => setNewStudent({...newStudent, imageUrl: url}))} />
                       </div>
                     </div>
@@ -340,22 +348,23 @@
               <div className="bg-gray-900 border border-white/20 rounded-2xl shadow-2xl w-full max-w-md relative overflow-hidden">
                 <button onClick={() => setIsBgModalOpen(false)} className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors"><CloseIcon /></button>
                 <div className="p-8">
-                  <h2 className="text-2xl font-serif-elegant font-bold text-white mb-6">Personalizar Fondo</h2>
+                  <h2 className="text-2xl font-serif-elegant font-bold text-white mb-6">Probar Fondo (Local)</h2>
                   <form onSubmit={handleChangeBackground} className="space-y-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-400 mb-2">Color CSS, URL o subir imagen local</label>
+                      <label className="block text-sm font-medium text-gray-400 mb-2">Si subiste la imagen a GitHub, escribe su nombre exacto (ej. <code>mifondo.jpg</code>):</label>
                       <div className="flex flex-col gap-2">
-                        <input type="text" className="w-full bg-gray-800 border border-gray-700 text-white rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-white/50 transition-all" placeholder="Ej. https://... o #1a1a1a" value={newBgInput} onChange={(e) => setNewBgInput(e.target.value)} />
+                        <input type="text" className="w-full bg-gray-800 border border-gray-700 text-white rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-white/50 transition-all" placeholder="Ej. fondo-estrellas.jpg" value={newBgInput} onChange={(e) => setNewBgInput(e.target.value)} />
+                        
+                        <div className="mt-2 text-xs text-gray-500 border-t border-gray-700 pt-2">O sube un archivo temporal para probar cómo se ve:</div>
                         <input type="file" accept="image/*" className="w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-gray-700 file:text-white hover:file:bg-gray-600 transition-all cursor-pointer" onChange={(e) => handleFileUpload(e, (url) => setNewBgInput(url))} />
                       </div>
                     </div>
                     <div className="pt-2 flex gap-3 flex-wrap">
-                      <p className="w-full text-xs text-gray-500 mb-1">Opciones rápidas:</p>
+                      <p className="w-full text-xs text-gray-500 mb-1">Opciones rápidas predefinidas:</p>
                       <button type="button" onClick={() => setNewBgInput('linear-gradient(to bottom right, #111827, #000000)')} className="text-xs bg-gray-800 border border-gray-600 px-3 py-1 rounded hover:bg-gray-700">Oscuro Clásico</button>
                       <button type="button" onClick={() => setNewBgInput('https://images.unsplash.com/photo-1519750783826-e2420f4d687f?auto=format&fit=crop&w=1920&q=80')} className="text-xs bg-gray-800 border border-gray-600 px-3 py-1 rounded hover:bg-gray-700">Madera Elegante</button>
-                      <button type="button" onClick={() => setNewBgInput('https://images.unsplash.com/photo-1557682250-33bd709cbe85?auto=format&fit=crop&w=1920&q=80')} className="text-xs bg-gray-800 border border-gray-600 px-3 py-1 rounded hover:bg-gray-700">Gradiente Cálido</button>
                     </div>
-                    <div className="pt-4"><button type="submit" className="w-full bg-white hover:bg-gray-200 text-black font-bold py-3 px-4 rounded-lg shadow-lg transition-transform transform hover:scale-[1.02]">Aplicar Fondo</button></div>
+                    <div className="pt-4"><button type="submit" className="w-full bg-white hover:bg-gray-200 text-black font-bold py-3 px-4 rounded-lg shadow-lg transition-transform transform hover:scale-[1.02]">Aplicar Fondo (Temporalmente)</button></div>
                   </form>
                 </div>
               </div>
@@ -409,5 +418,7 @@
     const root = ReactDOM.createRoot(document.getElementById('root'));
     root.render(<App />);
   </script>
+</body>
+</html>
 </body>
 </html>
