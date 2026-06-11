@@ -6,6 +6,7 @@
   <title>Contra Incendios</title>
   <link rel="icon" type="image/png" href="logo.png" />
   
+  <link rel="icon" type="image/png" href="https://cdn-icons-png.flaticon.com/512/3246/3246283.png" />
   
   <!-- Dependencias de React y Tailwind -->
   <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
@@ -195,16 +196,6 @@
               .dynamic-bg { background: var(--dynamic-bg-value); background-size: cover; background-position: center; background-attachment: fixed; background-repeat: no-repeat; }
               @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap');
               .font-serif-elegant { font-family: 'Playfair Display', serif; }
-              .shine-frame { position: relative; transition: all 0.3s ease;
-                background-image: url('d46e915a-ec89-4b65-b47a-8bf16595c147.jpg');
-                background-size: 100% 100%;
-                background-repeat: no-repeat;
-                padding: 28px;
-                box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.8);
-              }
-              .shine-frame::after { content: ''; position: absolute; top: 0; left: -150%; width: 50%; height: 100%; background: linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(255,255,255,0.4) 50%, rgba(255,255,255,0) 100%); transform: skewX(-25deg); transition: left 0.7s ease; z-index: 10; pointer-events: none; }
-              .group:hover .shine-frame::after { left: 200%; }
-              .group:hover .shine-frame { transform: translateY(-5px); box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.9); }
               .bg-overlay { background-color: rgba(0, 0, 0, 0.6); backdrop-filter: blur(0px); }
             `}
           </style>
@@ -239,21 +230,52 @@
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-10">
                 {students.map((student) => (
                   <div key={student.id} className="group flex flex-col items-center">
-                    <div className="shine-frame w-64 h-80 relative cursor-pointer">
-                      {student.isDeceased && (
-                        <div className="absolute top-0 right-0 w-20 h-20 overflow-hidden z-30 pointer-events-none">
-                          <div className="absolute top-4 -right-8 w-32 bg-black text-gray-300 text-[10px] font-serif-elegant font-bold py-1 text-center transform rotate-45 shadow-[0_2px_4px_rgba(0,0,0,0.5)] border-y border-gray-600">En memoria</div>
-                        </div>
-                      )}
-                      <img src={student.imageUrl} alt={student.name} className="w-full h-full object-cover rounded-lg transition-transform duration-700 group-hover:scale-105" onError={(e) => { e.target.src = 'https://via.placeholder.com/400x500/1a1a1a/d4af37?text=Foto+No+Disponible'; }} />
-                      {isAdmin && (
-                        <button onClick={() => handleDeleteStudent(student.id)} className="absolute top-2 right-2 p-2 bg-red-600/80 hover:bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity z-20" title="Eliminar alumno"><TrashIcon /></button>
-                      )}
-                      <div className="absolute bottom-[28px] w-[calc(100%-56px)] left-[28px] p-2 bg-gradient-to-t from-black/90 via-black/50 to-transparent z-20 rounded-b-lg">
-                        <h3 className="font-serif-elegant text-xl font-bold text-yellow-400 text-center drop-shadow-md">{student.name}</h3>
+                    
+                    {/* Contenedor Principal de la Tarjeta */}
+                    <div className="relative w-64 h-80 cursor-pointer transform transition-transform duration-500 group-hover:-translate-y-2 rounded-xl group-hover:shadow-[0_15px_30px_-5px_rgba(212,175,55,0.4)]">
+                      
+                      {/* Capa 1: Fondo de Marco y Brillo (Z-10) */}
+                      <div 
+                        className="absolute inset-0 z-10 overflow-hidden rounded-xl bg-[#1a1a1a] border-2 border-[#d4af37] shadow-[inset_0_0_20px_rgba(0,0,0,0.8)]"
+                        style={{ 
+                          backgroundImage: "url('d46e915a-ec89-4b65-b47a-8bf16595c147.jpg')", 
+                          backgroundSize: '100% 100%', 
+                          backgroundPosition: 'center',
+                          backgroundRepeat: 'no-repeat'
+                        }}
+                      >
+                        {/* Brillo: Se mueve solo detrás de la foto, iluminando exclusivamente el marco */}
+                        <div className="absolute top-0 -left-[150%] w-[50%] h-full bg-gradient-to-r from-transparent via-white/30 to-transparent skew-x-[-25deg] transition-all duration-700 z-20 group-hover:left-[200%] pointer-events-none"></div>
                       </div>
+
+                      {/* Capa 2: Foto del Alumno (Z-20, centrada dentro del marco) */}
+                      <div className="absolute top-[28px] left-[28px] right-[28px] bottom-[28px] z-20 overflow-hidden bg-black shadow-inner">
+                        {student.isDeceased && (
+                          <div className="absolute top-0 right-0 w-20 h-20 overflow-hidden z-30 pointer-events-none">
+                            <div className="absolute top-4 -right-8 w-32 bg-black text-gray-300 text-[10px] font-serif-elegant font-bold py-1 text-center transform rotate-45 shadow-[0_2px_4px_rgba(0,0,0,0.5)] border-y border-gray-600">En memoria</div>
+                          </div>
+                        )}
+                        <img 
+                          src={student.imageUrl} 
+                          alt={student.name} 
+                          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" 
+                          onError={(e) => { e.target.src = 'https://via.placeholder.com/400x500/1a1a1a/d4af37?text=Foto+No+Disponible'; }} 
+                        />
+                        
+                        <div className="absolute bottom-0 w-full p-3 bg-gradient-to-t from-black/90 via-black/50 to-transparent z-40 flex flex-col justify-end">
+                          <h3 className="font-serif-elegant text-lg font-bold text-yellow-400 text-center drop-shadow-md leading-tight">{student.name}</h3>
+                        </div>
+                      </div>
+
+                      {/* Botón Eliminar (Z-50) */}
+                      {isAdmin && (
+                        <button onClick={() => handleDeleteStudent(student.id)} className="absolute -top-3 -right-3 p-2 bg-red-600 hover:bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity z-50 shadow-lg border-2 border-gray-900" title="Eliminar alumno">
+                          <TrashIcon />
+                        </button>
+                      )}
                     </div>
-                    <div className="mt-4 text-center px-2 max-w-[256px]">
+                    
+                    <div className="mt-6 text-center px-2 max-w-[256px]">
                       {student.quote && <p className="text-gray-300 text-sm italic font-serif-elegant">"{student.quote}"</p>}
                     </div>
                   </div>
@@ -420,5 +442,4 @@
   </script>
 </body>
 </html>
-</body>
 </html>
