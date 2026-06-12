@@ -6,16 +6,12 @@
   <title>Contra Incendios</title>
   <link rel="icon" type="image/png" href="logo.png" />
   
-  <!-- Estas etiquetas importan React directamente al navegador -->
   <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
-  <!-- Babel nos permite compilar el código JSX al instante -->
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-  <!-- Tailwind CSS para el diseño -->
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body>
-  <!-- Contenedor principal donde React inyectará la aplicación -->
   <div id="root"></div>
 
   <script type="text/babel">
@@ -267,9 +263,13 @@
                         <h3 className="font-serif-elegant text-xl font-bold text-yellow-400 text-center drop-shadow-md">{student.name}</h3>
                       </div>
                     </div>
+                    
+                    {/* AQUÍ ESTÁ LA MODIFICACIÓN: 
+                        Se cambió "text-gray-300 text-sm" por "text-white text-2xl" para la frase */}
                     <div className="mt-4 text-center px-2 max-w-[256px]">
-                      {student.quote && <p className="text-gray-300 text-sm italic font-serif-elegant">"{student.quote}"</p>}
+                      {student.quote && <p className="text-white text-2xl italic font-serif-elegant">"{student.quote}"</p>}
                     </div>
+                    
                   </div>
                 ))}
               </div>
